@@ -20,11 +20,13 @@ describe("Celestrak.org API Tests", () => {
   });
 
   it("TC2-2: Deve retornar 204 quando não tem dados", () => {
-    cy.intercept(endpoint, { statusCode: 204, body: {} }).as("noDataResponse");
+    cy.intercept("GET", endpoint, { statusCode: 204, body: {} }).as(
+      "noDataResponse"
+    ); // Especifica o método GET
     cy.request(endpoint).then((response) => {
-      cy.wait("@noDataResponse"); // Aguarda o intercept
-      expect(response.status).to.eq(204);
-      expect(response.body).to.be.empty;
+      cy.wait("@noDataResponse"); // Aguarda o intercept ser aplicado
+      expect(response.status).to.eq(204); // Verifica o status
+      expect(response.body).to.be.empty; // Verifica se o body está vazio
     });
   });
 
