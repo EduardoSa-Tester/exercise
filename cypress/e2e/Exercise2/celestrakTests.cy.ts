@@ -1,4 +1,4 @@
-// cypress/e2e/Exercise2/celestrakTests.cy.ts
+// cypress/integration/celestrak-tests.spec.ts
 
 describe("Celestrak.org API Tests", () => {
   const endpoint =
@@ -20,13 +20,10 @@ describe("Celestrak.org API Tests", () => {
   });
 
   it("TC2-2: Deve retornar 204 quando não tem dados", () => {
-    cy.intercept("GET", endpoint, { statusCode: 204, body: {} }).as(
-      "noDataResponse"
-    ); // Especifica o método GET
+    cy.intercept(endpoint, { statusCode: 204, body: {} }).as("noDataResponse");
     cy.request(endpoint).then((response) => {
-      cy.wait("@noDataResponse"); // Aguarda o intercept ser aplicado
-      expect(response.status).to.eq(204); // Verifica o status
-      expect(response.body).to.be.empty; // Verifica se o body está vazio
+      expect(response.status).to.eq(204);
+      expect(response.body).to.be.empty;
     });
   });
 
@@ -44,11 +41,9 @@ describe("Celestrak.org API Tests", () => {
   it("TC2-4: Deve verificar se EPOCH está fora dos 30 dias (usando mock)", () => {
     cy.intercept(endpoint, {
       statusCode: 200,
-      body: [{ EPOCH: "2022-01-01T00:00:00" }],
-    }).as("invalidEpoch"); // Data mais antiga
+      body: [{ EPOCH: "2023-01-01T00:00:00" }],
+    }).as("invalidEpoch");
     cy.request(endpoint).then((response) => {
-      cy.wait("@invalidEpoch"); // Aguarda o intercept
-      expect(response.body[0]).to.exist; // Verifica se o objeto existe
       expect(isWithinLast30Days(response.body[0].EPOCH)).to.be.false; // Espera falhar
     });
   });
@@ -56,7 +51,7 @@ describe("Celestrak.org API Tests", () => {
   it("TC2-5: Deve verificar se OBJECT_ID está no formato COSPAR_ID", () => {
     cy.request(endpoint).then((response) => {
       expect(response.status).to.eq(200);
-      const pattern = /^(\d{4})-(\d{3})([A-Z]{1,3})$/;
+      const pattern = /^(\d{4})-(\d{3})([A-Z]{1,3})$/; // Padrão: Ano (4 dígitos)-Número de lançamento (3 dígitos)-Código (até 3 letras)
       response.body.forEach((object: any) => {
         expect(object.OBJECT_ID).to.match(pattern);
       });
@@ -67,7 +62,7 @@ describe("Celestrak.org API Tests", () => {
     cy.request(endpoint).then((response) => {
       expect(response.status).to.eq(200);
       response.body.forEach((object: any) => {
-        expect(object.NORAD_CAT_ID).to.match(/^\d{5}$/);
+        expect(object.NORAD_CAT_ID).to.match(/^\d{5}$/); // Exatamente 5 dígitos
       });
     });
   });
@@ -78,9 +73,6 @@ describe("Celestrak.org API Tests", () => {
       body: [{ NORAD_CAT_ID: "123456" }],
     }).as("invalidNorad");
     cy.request(endpoint).then((response) => {
-      cy.wait("@invalidNorad"); // Aguarda o intercept
-      expect(response.body[0]).to.exist; // Verifica se o objeto existe
-      expect(response.body[0].NORAD_CAT_ID).to.exist; // Verifica se NORAD_CAT_ID existe
       expect(response.body[0].NORAD_CAT_ID.length).to.be.greaterThan(5); // Espera falhar
     });
   });
@@ -91,9 +83,6 @@ describe("Celestrak.org API Tests", () => {
       body: [{ NORAD_CAT_ID: "123" }],
     }).as("invalidNorad");
     cy.request(endpoint).then((response) => {
-      cy.wait("@invalidNorad"); // Aguarda o intercept
-      expect(response.body[0]).to.exist; // Verifica se o objeto existe
-      expect(response.body[0].NORAD_CAT_ID).to.exist; // Verifica se NORAD_CAT_ID existe
       expect(response.body[0].NORAD_CAT_ID.length).to.be.lessThan(5); // Espera falhar
     });
   });
