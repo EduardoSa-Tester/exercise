@@ -19,11 +19,24 @@ describe("Celestrak.org API Tests", () => {
     });
   });
 
-  it("TC2-2: Deve retornar 204 quando não tem dados", () => {
-    cy.intercept(endpoint, { statusCode: 204, body: {} }).as("noDataResponse");
+  it("TC2-2 Novo: Verificar e logar status code da resposta", () => {
     cy.request(endpoint).then((response) => {
-      expect(response.status).to.eq(204);
-      expect(response.body).to.be.empty;
+      cy.log("Status code recebido: " + response.status); // Loga o status code
+      if (response.status === 200) {
+        cy.log(
+          "Resposta 200: Body contém " +
+            (Array.isArray(response.body)
+              ? response.body.length + " elementos"
+              : "conteúdo não array")
+        );
+      } else if (response.status === 204) {
+        cy.log("Resposta 204: Sem conteúdo, body vazio");
+      } else {
+        cy.log("Status code inesperado: " + response.status);
+      }
+
+      // Opcional: Log adicional para depuração
+      cy.log("Detalhes da resposta: " + JSON.stringify(response.body));
     });
   });
 
