@@ -22,7 +22,7 @@ describe("Testes da API de Satélites", () => {
     dryMass: 4500,
   });
 
-  it("TC3-1 - Criar objeto com dados válidos", () => {
+  it("TC3-1 - Verifica se a API aceita um payload válido e retorna 201", () => {
     const validPayload = getBasePayload();
     cy.request({
       method: "POST",
@@ -45,7 +45,7 @@ describe("Testes da API de Satélites", () => {
     });
   });
 
-  it("TC3-2 - Dados inválidos: CosparId não é ano + 3 dígitos", () => {
+  it("TC3-2 - Testa um payload com cosparId inválido para garantir que a API retorne um erro", () => {
     const invalidPayload = {
       cosparId: "Invalid-123", // Valor inválido
       noradId: "12345",
@@ -85,7 +85,7 @@ describe("Testes da API de Satélites", () => {
     });
   });
 
-  it("TC3-3 - Dados inválidos: NoradId não tem exatamente 5 dígitos", () => {
+  it("TC3-3 - Verifica se a API rejeita um noradId com menos ou mais de 5 dígitos", () => {
     const invalidPayload = {
       cosparId: "2025-001",
       noradId: "123", // Valor inválido
@@ -125,7 +125,7 @@ describe("Testes da API de Satélites", () => {
     });
   });
 
-  it("TC3-4 - Dados inválidos: ObjectType não é um valor permitido", () => {
+  it("TC3-4 - Testa um objectType que não está na lista permitida", () => {
     const invalidPayload = {
       cosparId: "2025-001",
       noradId: "12345",
@@ -165,7 +165,7 @@ describe("Testes da API de Satélites", () => {
     });
   });
 
-  it("TC3-5 - Dados inválidos: Formato de launchDate incorreto", () => {
+  it("TC3-5 - Verifica se a API rejeita um launchDate no formato errado", () => {
     const invalidPayload = {
       cosparId: "2025-001",
       noradId: "12345",
@@ -205,7 +205,7 @@ describe("Testes da API de Satélites", () => {
     });
   });
 
-  it("TC3-6 - Dados inválidos: Valor negativo para campos positivos", () => {
+  it("TC3-6 - Testa valores negativos em campos que devem ser positivos", () => {
     const invalidPayload = {
       cosparId: "2025-001",
       noradId: "12345",
@@ -245,7 +245,7 @@ describe("Testes da API de Satélites", () => {
     });
   });
 
-  it("TC3-7 - Dados inválidos: Formato de decay incorreto", () => {
+  it("TC3-7 - Testa valores negativos em campos que devem ser positivos", () => {
     const invalidPayload = {
       cosparId: "2025-001",
       noradId: "12345",
@@ -285,7 +285,7 @@ describe("Testes da API de Satélites", () => {
     });
   });
 
-  it("TC3-8 - Dados inválidos: LaunchMass com valor negativo", () => {
+  it("TC3-8 - Testa um launchMass negativo para garantir erro", () => {
     const invalidPayload = {
       cosparId: "2025-001",
       noradId: "12345",
@@ -325,7 +325,7 @@ describe("Testes da API de Satélites", () => {
     });
   });
 
-  it("TC09 - Dados inválidos: Period com valor zero", () => {
+  it("TC3-9 - Verifica se a API rejeita period como zero", () => {
     const invalidPayload = {
       cosparId: "2025-001",
       noradId: "12345",
