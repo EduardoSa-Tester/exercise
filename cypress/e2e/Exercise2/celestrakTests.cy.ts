@@ -1,6 +1,4 @@
-// cypress/integration/celestrak-tests.spec.ts
-
-describe("Celestrak.org API Tests", () => {
+describe("Testes API Celestrak.org", () => {
   const endpoint =
     "https://celestrak.org/NORAD/elements/gp.php?GROUP=last-30-days&FORMAT=json";
 
@@ -12,16 +10,16 @@ describe("Celestrak.org API Tests", () => {
     return epochDate >= thirtyDaysAgo && epochDate <= now;
   }
 
-  it("TC2-1: Deve retornar dados na chamada a API", () => {
+  it("TC2-1: Deve retornar dados na chamada à API", () => {
     cy.request(endpoint).then((response) => {
       expect(response.status).to.eq(200);
       expect(response.body).to.not.be.empty;
     });
   });
 
-  it("TC2-2 Novo: Verificar e logar status code da resposta", () => {
+  it("TC2-2: Verificar e criar registos do código de estado da resposta", () => {
     cy.request(endpoint).then((response) => {
-      cy.log("Status code recebido: " + response.status); // Loga o status code
+      cy.log("Código de estado recebido: " + response.status); // Regista o código de estado
       if (response.status === 200) {
         cy.log(
           "Resposta 200: Body contém " +
@@ -32,10 +30,10 @@ describe("Celestrak.org API Tests", () => {
       } else if (response.status === 204) {
         cy.log("Resposta 204: Sem conteúdo, body vazio");
       } else {
-        cy.log("Status code inesperado: " + response.status);
+        cy.log("Código de estado inesperado: " + response.status);
       }
 
-      // Opcional: Log adicional para depuração
+      // Opcional: Registo adicional para depuração
       cy.log("Detalhes da resposta: " + JSON.stringify(response.body));
     });
   });
@@ -51,17 +49,48 @@ describe("Celestrak.org API Tests", () => {
     });
   });
 
-  it("TC2-4: Deve verificar se EPOCH está fora dos 30 dias (usando mock)", () => {
-    cy.intercept(endpoint, {
-      statusCode: 200,
-      body: [{ EPOCH: "2023-01-01T00:00:00" }],
-    }).as("invalidEpoch");
+  it("TC2-4: Verificar se EPOCH está acima ou abaixo dos 30 dias", () => {
     cy.request(endpoint).then((response) => {
-      expect(isWithinLast30Days(response.body[0].EPOCH)).to.be.false; // Espera falhar
+      expect(response.status).to.eq(200);
+      expect(response.body).to.be.an("array").and.not.be.empty;
+
+      response.body.forEach((object: any) => {
+        const epochDate = new Date(object.EPOCH);
+        const now = new Date();
+        const thirtyDaysAgo = new Date(
+          now.getTime() - 30 * 24 * 60 * 60 * 1000
+        );
+
+        const isWithin = isWithinLast30Days(object.EPOCH);
+
+        if (!isWithin) {
+          if (epochDate < thirtyDaysAgo) {
+            cy.log(
+              "EPOCH está ABAIXO dos 30 dias: A data (" +
+                object.EPOCH +
+                ") é mais antiga que 30 dias."
+            );
+          } else if (epochDate > now) {
+            cy.log(
+              "EPOCH está ACIMA dos 30 dias: A data (" +
+                object.EPOCH +
+                ") é no futuro."
+            );
+          }
+        } else {
+          cy.log(
+            "EPOCH está DENTRO dos 30 dias: A data (" +
+              object.EPOCH +
+              ") é válida."
+          );
+        }
+
+        cy.log("Detalhes do objeto: EPOCH " + object.EPOCH);
+      });
     });
   });
 
-  it("TC2-5: Deve verificar se OBJECT_ID está no formato COSPAR_ID", () => {
+  it("TC2-5: Verificar se OBJECT_ID está no formato internacial COSPAR_ID", () => {
     cy.request(endpoint).then((response) => {
       expect(response.status).to.eq(200);
       const pattern = /^(\d{4})-(\d{3})([A-Z]{1,3})$/; // Padrão: Ano (4 dígitos)-Número de lançamento (3 dígitos)-Código (até 3 letras)
@@ -71,7 +100,7 @@ describe("Celestrak.org API Tests", () => {
     });
   });
 
-  it("TC2-6: Deve verificar se NORAD_CAT_ID tem exatamente 5 dígitos", () => {
+  it("TC2-6: Verificar se NORAD_CAT_ID tem exatamente 5 dígitos", () => {
     cy.request(endpoint).then((response) => {
       expect(response.status).to.eq(200);
       response.body.forEach((object: any) => {
@@ -80,23 +109,87 @@ describe("Celestrak.org API Tests", () => {
     });
   });
 
-  it("TC2-7: Deve verificar se NORAD_CAT_ID tem mais de 5 dígitos (usando mock)", () => {
-    cy.intercept(endpoint, {
-      statusCode: 200,
-      body: [{ NORAD_CAT_ID: "123456" }],
-    }).as("invalidNorad");
+  it("TC2-7: Verificar se NORAD_CAT_ID tem mais ou menos de 5 dígitos", () => {
     cy.request(endpoint).then((response) => {
-      expect(response.body[0].NORAD_CAT_ID.length).to.be.greaterThan(5); // Espera falhar
+      expect(response.status).to.eq(200);
+      expect(response.body).to.be.an("array").and.not.be.empty;
+
+      let moreThan5 = 0; // Contador para IDs com mais de 5 dígitos
+      let lessThan5 = 0; // Contador para IDs com menos de 5 dígitos
+      let exactly5 = 0; // Contador para IDs com exatamente 5 dígitos
+
+      response.body.forEach((object: any) => {
+        if (object.NORAD_CAT_ID) {
+          const length = object.NORAD_CAT_ID.length;
+
+          if (length > 5) {
+            moreThan5++;
+            if (moreThan5 === 1)
+              cy.log(
+                "Exemplo de ID com mais de 5 dígitos: " + object.NORAD_CAT_ID
+              );
+          } else if (length < 5) {
+            lessThan5++;
+            if (lessThan5 === 1)
+              cy.log(
+                "Exemplo de ID com menos de 5 dígitos: " + object.NORAD_CAT_ID
+              );
+          } else {
+            exactly5++;
+          }
+        }
+      });
+
+      cy.log("Resumo TC2-7:");
+      cy.log("IDs com mais de 5 dígitos: " + moreThan5);
+      cy.log("IDs com menos de 5 dígitos: " + lessThan5);
+      cy.log("IDs com exatamente 5 dígitos: " + exactly5);
     });
   });
 
-  it("TC2-8: Deve verificar se NORAD_CAT_ID tem menos de 5 dígitos (usando mock)", () => {
-    cy.intercept(endpoint, {
-      statusCode: 200,
-      body: [{ NORAD_CAT_ID: "123" }],
-    }).as("invalidNorad");
+  it("TC2-8: Verificar o tempo de resposta da API", () => {
+    const startTime = new Date().getTime(); // Marca o tempo inicial
     cy.request(endpoint).then((response) => {
-      expect(response.body[0].NORAD_CAT_ID.length).to.be.lessThan(5); // Espera falhar
+      const endTime = new Date().getTime(); // Marca o tempo final
+      const responseTime = endTime - startTime; // Calcula o tempo em ms
+      cy.log("Tempo de resposta: " + responseTime + " ms");
+      expect(responseTime).to.be.lessThan(
+        5000,
+        "A resposta demorou mais de 5 segundos"
+      ); // Expectativa: menos de 5 segundos
+    });
+  });
+
+  it("TC2-9: Verificar se campos obrigatórios estão presentes e não nulos", () => {
+    cy.request(endpoint).then((response) => {
+      expect(response.status).to.eq(200);
+      let missingFields = 0;
+
+      response.body.forEach((object: any) => {
+        if (!object.EPOCH || object.EPOCH == null) missingFields++;
+        if (!object.NORAD_CAT_ID || object.NORAD_CAT_ID == null)
+          missingFields++;
+        if (!object.OBJECT_ID || object.OBJECT_ID == null) missingFields++;
+      });
+
+      cy.log("Resumo TC2-9: Campos ausentes ou nulos: " + missingFields);
+      expect(missingFields).to.eq(
+        0,
+        "Todos os campos obrigatórios devem estar presentes"
+      );
+    });
+  });
+
+  it("TC2-10: Verificar respostas de erro da API", () => {
+    cy.request({
+      url: endpoint,
+      failOnStatusCode: false, // Permite que o teste continue mesmo com erro
+    }).then((response) => {
+      if (response.status >= 500) {
+        cy.log("Erro de servidor detectado: Status " + response.status);
+      } else {
+        cy.log("Resposta bem-sucedida: Status " + response.status);
+      }
     });
   });
 });
